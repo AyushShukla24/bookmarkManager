@@ -1009,6 +1009,7 @@ export class BookmarksComponent implements OnInit, OnDestroy {
       await this.supabase.addBookmark(this.newUrl.trim(), this.newTitle.trim(), this.newTag);
       this.newTitle = ''; this.newUrl = ''; this.newTag = '';
       this.showModal = false;
+       await this.loadBookmarks();
     } catch (e: any) {
       this.formError = e.message;
     } finally {
@@ -1017,8 +1018,14 @@ export class BookmarksComponent implements OnInit, OnDestroy {
   }
 
   async deleteBookmark(id: string) {
-    try { await this.supabase.deleteBookmark(id); }
-    catch (e) { console.error(e); }
+    this.bookmarks = this.bookmarks.filter(b => b.id !== id);
+    
+    try { 
+      await this.supabase.deleteBookmark(id); 
+    } catch (e) { 
+      console.error(e);
+      await this.loadBookmarks();
+    }
   }
 
   async signOut() {
