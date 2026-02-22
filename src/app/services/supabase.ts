@@ -34,12 +34,12 @@ export class SupabaseService {
   }
 
   // ─── AUTH ───────────────────────────────────────────────
-  signInWithGoogle() {
-    return this.supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    });
-  }
+signInWithGoogle() {
+  return this.supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: 'https://bookmark-manager-eight-coral.vercel.app' },
+  });
+}
 
   signOut() {
     return this.supabase.auth.signOut();
