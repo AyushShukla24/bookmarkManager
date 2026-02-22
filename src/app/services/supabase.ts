@@ -8,62 +8,56 @@ export interface Bookmark {
   user_id: string;
   url: string;
   title: string;
+  tag?: string;
   created_at: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private supabase: SupabaseClient;
-  
-  // Reactive user state
+
   private userSubject = new BehaviorSubject<User | null>(null);
   user$ = this.userSubject.asObservable();
 
   constructor() {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
 
-    // Listen for auth state changes (login, logout, token refresh)
     this.supabase.auth.onAuthStateChange((event, session) => {
       this.userSubject.next(session?.user ?? null);
     });
 
-    // Load existing session on startup
     this.supabase.auth.getSession().then(({ data }) => {
       this.userSubject.next(data.session?.user ?? null);
     });
   }
 
-  // ─── AUTH ───────────────────────────────────────────────
-signInWithGoogle() {
-  return this.supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: 'https://bookmark-manager-eight-coral.vercel.app' },
-  });
-}
+  signInWithGoogle() {
+    return this.supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: 'https://bookmark-manager-eight-coral.vercel.app' },
+    });
+  }
 
   signOut() {
     return this.supabase.auth.signOut();
   }
 
-  // ─── BOOKMARKS ──────────────────────────────────────────
   async getBookmarks(): Promise<Bookmark[]> {
     const { data, error } = await this.supabase
       .from('bookmarks')
       .select('*')
       .order('created_at', { ascending: false });
-
     if (error) throw error;
     return data ?? [];
   }
 
-  async addBookmark(url: string, title: string) {
+  async addBookmark(url: string, title: string, tag?: string) {
     const user = this.userSubject.value;
     if (!user) throw new Error('Not authenticated');
 
     const { error } = await this.supabase
       .from('bookmarks')
-      .insert({ url, title, user_id: user.id });
-
+      .insert({ url, title, user_id: user.id, tag: tag || null });
     if (error) throw error;
   }
 
@@ -72,24 +66,16 @@ signInWithGoogle() {
       .from('bookmarks')
       .delete()
       .eq('id', id);
-
     if (error) throw error;
   }
 
-  // ─── REALTIME ────────────────────────────────────────────
-  // Returns a subscription — call .unsubscribe() on cleanup
   subscribeToBookmarks(userId: string, onChange: () => void) {
     return this.supabase
       .channel('bookmarks-channel')
       .on(
         'postgres_changes',
-        {
-          event: '*',            // INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'bookmarks',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => onChange()         // Just re-fetch on any change
+        { event: '*', schema: 'public', table: 'bookmarks', filter: `user_id=eq.${userId}` },
+        () => onChange()
       )
       .subscribe();
   }
