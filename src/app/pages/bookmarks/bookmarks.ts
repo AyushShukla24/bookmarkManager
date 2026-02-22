@@ -9,7 +9,6 @@ import { Bookmark, SupabaseService } from '../../services/supabase';
   standalone: true,
   imports: [CommonModule, FormsModule],
   styles: [`
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
 
     :host {
       font-family: 'DM Sans', sans-serif;
